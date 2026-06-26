@@ -1,0 +1,32 @@
+spring:
+  config:
+    activate:
+      on-profile: dev-batch
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/deokhugam-db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: user
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # 정합성 검증 (엔티티 vs 테이블)
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  batch:
+    jdbc:
+      # 배치 Job 실행 이력(메타데이터)을 DB에 저장
+      initialize-schema: always
+    job:
+      # 앱이 뜰 때 자동으로 Job을 실행하지 않음 (스케줄러/API 호출로 실행)
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework.batch: DEBUG # 배치 작업 과정 디버깅을 위해 DEBUG 설정

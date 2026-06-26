@@ -1,0 +1,22 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: local-deokhugam-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: deokhugam-db
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 1234
+    ports:
+      - "3306:3306"
+    volumes:
+      # 로컬 데이터를 저장할 폴더 (삭제/생성 시 데이터 유지)
+      - ./mysql-data:/var/lib/mysql
+      # 컨테이너 시작 시 실행될 DDL 스크립트
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
