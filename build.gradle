@@ -30,6 +30,9 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // UUIDv7 생성을 위한 라이브러리
+    implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
 }
 
 tasks.named('test') {
