@@ -1,5 +1,6 @@
 package com.codeit.deokhugambatch.user.job;
 
+import com.codeit.deokhugambatch.user.repository.OauthKakaoRepository;
 import com.codeit.deokhugambatch.user.repository.UserRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +25,7 @@ public class UserConfig {
   private final UserRepository userRepository;
   private final JobRepository jobRepository;
   private final PlatformTransactionManager transactionManager;
+  private final OauthKakaoRepository oauthKakaoRepository;
 
   @Bean
   public Job deleteUserJob() {
@@ -42,6 +44,7 @@ public class UserConfig {
   public Tasklet deleteUserTasklet() {
     return (contribution, chunkContext) -> {
       Instant oneDayAgo = Instant.now().minus(1, ChronoUnit.DAYS);
+      oauthKakaoRepository.deleteExpiredOauthKakao(oneDayAgo);
       userRepository.deleteExpiredUsers(oneDayAgo);
       log.info("탈퇴 후 1일 경과한 사용자 물리 삭제 완료");
       return RepeatStatus.FINISHED;

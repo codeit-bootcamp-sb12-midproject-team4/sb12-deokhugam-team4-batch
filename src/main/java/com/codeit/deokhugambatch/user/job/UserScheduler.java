@@ -17,7 +17,8 @@ public class UserScheduler {
   private final JobLauncher jobLauncher;
   private final Job deleteUserJob;
 
-  @Scheduled(cron = "0 0 0 * * *")
+  //@Scheduled(cron = "0 0 0 * * *")
+  @Scheduled(fixedDelay = 10000)
   public void scheduled() throws Exception {
     JobParameters jobParameters = new JobParametersBuilder()
         .addLong("time", System.currentTimeMillis())
