@@ -247,34 +247,31 @@ CREATE TABLE power_user
 
 CREATE TABLE trending_keyword_snapshot
 (
-    dataset_id    BIGINT   NOT NULL AUTO_INCREMENT,
+    snapshot_id   BIGINT   NOT NULL AUTO_INCREMENT,
     calculated_at DATETIME NOT NULL,
-    PRIMARY KEY (dataset_id),
+    PRIMARY KEY (snapshot_id),
     CONSTRAINT uq_trending_keyword_snapshot_time UNIQUE (calculated_at)
 );
 
 CREATE TABLE trending_keyword
 (
-    dataset_id BIGINT        NOT NULL,
+    snapshot_id BIGINT       NOT NULL,
     ranking    INT UNSIGNED  NOT NULL,
     keyword    VARCHAR(50)   NOT NULL,
     score      DECIMAL(8, 2) NOT NULL,
-    PRIMARY KEY (dataset_id, ranking),
-    CONSTRAINT fk_trending_keyword_dataset
-        FOREIGN KEY (dataset_id)
-            REFERENCES trending_keyword_snapshot (dataset_id)
+    PRIMARY KEY (snapshot_id, ranking),
+    CONSTRAINT fk_trending_keyword_snapshot
+        FOREIGN KEY (snapshot_id)
+            REFERENCES trending_keyword_snapshot (snapshot_id)
             ON DELETE CASCADE,
     CONSTRAINT chk_trending_keyword_ranking CHECK (ranking BETWEEN 1 AND 10),
     CONSTRAINT chk_trending_keyword_score CHECK (score >= 0)
 );
-ALTER TABLE trending_keyword ADD CONSTRAINT fk_trending_keyword_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES trending_keyword_snapshot (snapshot_id) ON DELETE CASCADE;
-ALTER TABLE trending_keyword ADD CONSTRAINT chk_trending_keyword_ranking CHECK (ranking BETWEEN 1 AND 10);
-ALTER TABLE trending_keyword ADD CONSTRAINT chk_trending_keyword_score CHECK (score >= 0);
 
 CREATE TABLE `oauth_kakao` (
    id              BINARY(16)      NOT NULL,
    user_id         BINARY(16)      NOT NULL,
-   kako_id         VARCHAR(50)     NOT NULL,
+   kakao_id         VARCHAR(50)     NOT NULL,
    email           VARCHAR(320)    NOT NULL,
    nickname        VARCHAR(20)     NOT NULL,
    deleted_at      DATETIME(6)     NULL,
