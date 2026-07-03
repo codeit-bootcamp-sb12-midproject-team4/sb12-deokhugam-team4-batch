@@ -67,7 +67,7 @@ CREATE TABLE review (
     book_id         BINARY(16)      NOT NULL,
     user_id         BINARY(16)      NOT NULL,
     content         VARCHAR(1000)   NOT NULL,
-    attachment_url  VARCHAR(100)    NULL,
+    attachment_url  VARCHAR(255)    NULL,
     rating          INTEGER         NOT NULL CHECK (rating BETWEEN 1 AND 5),
     like_count      BIGINT          NOT NULL DEFAULT 0,
     comment_count   BIGINT          NOT NULL DEFAULT 0,
@@ -153,6 +153,7 @@ CREATE TABLE batch_metadata
         'TRENDING_KEYWORD'
     ) NOT NULL,
     period ENUM(
+        'REALTIME',
         'DAILY',
         'WEEKLY',
         'MONTHLY',
@@ -209,7 +210,7 @@ CREATE TABLE popular_review
     book_author    VARCHAR(50)     NOT NULL,
     thumbnail_url  VARCHAR(300)    NULL,
     user_nickname  VARCHAR(20)     NOT NULL,
-    review_content VARCHAR(1000)   NOT NULL,
+    review_summary VARCHAR(300)    NOT NULL,
     review_rating  INT UNSIGNED    NOT NULL,
     score          DECIMAL(10, 2)  NOT NULL,
     like_count     INT UNSIGNED    NOT NULL,
@@ -247,22 +248,22 @@ CREATE TABLE power_user
 
 CREATE TABLE trending_keyword_snapshot
 (
-    snapshot_id   BIGINT   NOT NULL AUTO_INCREMENT,
+    dataset_id    BIGINT   NOT NULL AUTO_INCREMENT,
     calculated_at DATETIME NOT NULL,
-    PRIMARY KEY (snapshot_id),
+    PRIMARY KEY (dataset_id),
     CONSTRAINT uq_trending_keyword_snapshot_time UNIQUE (calculated_at)
 );
 
 CREATE TABLE trending_keyword
 (
-    snapshot_id BIGINT       NOT NULL,
+    dataset_id BIGINT        NOT NULL,
     ranking    INT UNSIGNED  NOT NULL,
     keyword    VARCHAR(50)   NOT NULL,
     score      DECIMAL(8, 2) NOT NULL,
-    PRIMARY KEY (snapshot_id, ranking),
-    CONSTRAINT fk_trending_keyword_snapshot
-        FOREIGN KEY (snapshot_id)
-            REFERENCES trending_keyword_snapshot (snapshot_id)
+    PRIMARY KEY (dataset_id, ranking),
+    CONSTRAINT fk_trending_keyword_dataset
+        FOREIGN KEY (dataset_id)
+            REFERENCES trending_keyword_snapshot (dataset_id)
             ON DELETE CASCADE,
     CONSTRAINT chk_trending_keyword_ranking CHECK (ranking BETWEEN 1 AND 10),
     CONSTRAINT chk_trending_keyword_score CHECK (score >= 0)
