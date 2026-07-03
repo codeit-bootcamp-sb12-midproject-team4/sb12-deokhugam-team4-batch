@@ -6,7 +6,10 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EntityScan("com.codeit.deokhugamcommon.domain")
+@EntityScan({
+	"com.codeit.deokhugamcommon.domain",
+	"com.codeit.deokhugambatch.user.entity"
+})
 @EnableScheduling
 public class DeokhugamBatchApplication {
 
