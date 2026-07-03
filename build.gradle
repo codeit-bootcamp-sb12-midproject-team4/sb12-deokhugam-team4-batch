@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.16'
     id 'io.spring.dependency-management' version '1.1.7'
+    id "co.uzzu.dotenv.gradle" version "4.0.0"  //gradle에서 .env 사용
 }
 
 group = 'com.codeit'
@@ -16,6 +17,20 @@ java {
 
 repositories {
     mavenCentral()
+
+//    actions를 위해 getenv, 로컬을 위해 env.__.value
+    maven {
+        def githubRepository = System.getenv("GITHUB_REPOSITORY") ?: env.GITHUB_REPOSITORY.value
+        def githubActor = System.getenv("GITHUB_ACTOR") ?: env.GITHUB_ACTOR.value
+        def githubToken = System.getenv("GITHUB_TOKEN") ?: env.GITHUB_TOKEN.value
+
+        url = uri("https://maven.pkg.github.com/${githubRepository}")
+
+        credentials {
+            username = githubActor
+            password = githubToken
+        }
+    }
 }
 
 dependencies {
@@ -30,6 +45,9 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+//    공통 패키지 의존성 추가
+    implementation 'com.codeit:deokhugam-common:1.0.0'
 }
 
 tasks.named('test') {
