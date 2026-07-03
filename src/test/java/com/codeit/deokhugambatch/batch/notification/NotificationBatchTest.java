@@ -85,7 +85,7 @@ class NotificationBatchTest {
 				.publisher("publisher")
 				.publishedDate(LocalDate.of(2024, 1, 1))
 				.isbn("9781234567890")
-				.thumbnailUrl("thumbnail_url")
+				.thumbnailKey("thumbnail_key")
 				.rating(0.0)
 				.reviewCount(0L)
 				.build();
