@@ -5,7 +5,6 @@ import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
 import com.codeit.deokhugambatch.dashboard.common.reader.DashboardReader;
 import com.codeit.deokhugambatch.dashboard.common.writer.DashboardWriter;
 import com.codeit.deokhugambatch.dashboard.popularbook.model.PopularBookCandidate;
-import com.codeit.deokhugamcommon.domain.dashboard.entity.PopularBook;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Step;
@@ -22,8 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 인기도서(Popular Book) 집계 및 랭킹 산출 스텝을 정의하는 설정 클래스입니다.
- * 베이지안 평균 집계를 위해 원천 데이터를 Full-Pool로 다루어야 하므로 Tasklet 아키텍처를 채택했습니다.
+ * 인기도서(Popular Book) 집계 및 랭킹 산출 Step
+ *
+ * <p>베이지안 평균 계산은 전체 후보군을 대상으로 수행해야 하므로
+ * Chunk 기반이 아닌 Tasklet 기반으로 구현한다.</p>
  */
 @Slf4j
 @Configuration
@@ -35,38 +36,58 @@ public class PopularBookStepConfig {
 
 	@Qualifier("popularBookReader")
 	private final DashboardReader<PopularBookCandidate> popularBookReader;
+
 	@Qualifier("popularBookCalculator")
-	private final DashboardCalculator<PopularBookCandidate, PopularBook> popularBookCalculator;
+	private final DashboardCalculator<PopularBookCandidate, PopularBookCandidate> popularBookCalculator;
+
 	@Qualifier("popularBookWriter")
-	private final DashboardWriter<PopularBook> popularBookWriter;
+	private final DashboardWriter<PopularBookCandidate> popularBookWriter;
 
 	@Bean
 	public Step popularBookStep() {
+
 		return new StepBuilder("popularBookStep", jobRepository)
 			.tasklet((contribution, chunkContext) -> {
-				// 1. JobExecutionContext에서 공유 파라미터 획득
-				Map<String, Object> jobContext = chunkContext.getStepContext().getJobExecutionContext();
+
+				// JobExecutionContext에서 공통 파라미터 조회
+				Map<String, Object> jobContext =
+					chunkContext.getStepContext().getJobExecutionContext();
+
 				Long datasetId = (Long) jobContext.get("datasetId");
-				DashboardPeriod period = DashboardPeriod.valueOf((String) jobContext.get("period"));
-				LocalDate batchDate = LocalDate.parse((String) jobContext.get("batchDate"));
+				DashboardPeriod period =
+					DashboardPeriod.valueOf((String) jobContext.get("period"));
+				LocalDate batchDate =
+					LocalDate.parse((String) jobContext.get("batchDate"));
 
-				log.info("[PopularBookStep] 인기도서 집계 시작 - DatasetID: {}, Period: {}", datasetId, period);
+				log.info(
+					"[PopularBookStep] 인기도서 집계 시작 - datasetId={}, period={}",
+					datasetId,
+					period
+				);
 
-				// 2. Read: 대상 기간 내의 도서 통계 후보군 전건 조회
-				List<PopularBookCandidate> candidates = popularBookReader.read(batchDate, period);
+				// 1. Read
+				List<PopularBookCandidate> candidates =
+					popularBookReader.read(batchDate, period);
+
 				if (candidates.isEmpty()) {
-					log.warn("[PopularBookStep] 집계 대상 도서 데이터가 존재하지 않습니다.");
+					log.warn("[PopularBookStep] 집계 대상 데이터가 존재하지 않습니다.");
 					return RepeatStatus.FINISHED;
 				}
 
-				// 3. Calculate: 베이지안 평균 알고리즘 적용 및 상위 50위 정렬/커팅
-				List<PopularBook> rankedBooks = popularBookCalculator.calculate(candidates);
+				// 2. Calculate
+				List<PopularBookCandidate> rankedCandidates =
+					popularBookCalculator.calculate(candidates);
 
-				// 4. Write: 결과 엔티티 변환 및 영속화(Bulk Insert)
-				popularBookWriter.write(rankedBooks, datasetId);
+				// 3. Write
+				popularBookWriter.write(rankedCandidates, datasetId);
 
-				log.info("[PopularBookStep] 인기도서 집계 완료 - 산출된 도서 수: {}건", rankedBooks.size());
+				log.info(
+					"[PopularBookStep] 인기도서 집계 완료 - {}건 저장",
+					rankedCandidates.size()
+				);
+
 				return RepeatStatus.FINISHED;
+
 			}, transactionManager)
 			.build();
 	}
