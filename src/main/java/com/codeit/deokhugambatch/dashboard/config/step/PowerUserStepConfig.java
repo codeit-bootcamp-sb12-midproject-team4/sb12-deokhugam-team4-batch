@@ -5,8 +5,6 @@ import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
 import com.codeit.deokhugambatch.dashboard.common.reader.DashboardReader;
 import com.codeit.deokhugambatch.dashboard.common.writer.DashboardWriter;
 import com.codeit.deokhugambatch.dashboard.poweruser.model.PowerUserCandidate;
-import com.codeit.deokhugambatch.dashboard.poweruser.model.UserActionLedger;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.repository.JobRepository;
@@ -22,51 +20,88 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 파워유저(Power User) 집계 및 랭킹 산출 스텝을 정의하는 설정 클래스입니다.
- * 유저별 다중 액션 원장(Ledger)을 기반으로 포인트를 가중 합산하므로 Tasklet 아키텍처를 채택했습니다.
+ * 파워유저(Power User) 집계 및 랭킹 산출 Step
+ *
+ * <p>사용자 활동 점수는 전체 후보군을 대상으로 계산해야 하므로
+ * Chunk 기반이 아닌 Tasklet 기반으로 구현한다.</p>
  */
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class PowerUserStepConfig {
 
 	private final JobRepository jobRepository;
 	private final PlatformTransactionManager transactionManager;
 
-	@Qualifier("powerUserReader")
-	private final DashboardReader<UserActionLedger> powerUserReader;
-	@Qualifier("powerUserCalculator")
-	private final DashboardCalculator<UserActionLedger, PowerUserCandidate> powerUserCalculator;
-	@Qualifier("powerUserWriter")
+	private final DashboardReader<PowerUserCandidate> powerUserReader;
+	private final DashboardCalculator<
+		PowerUserCandidate,
+		PowerUserCandidate> powerUserCalculator;
 	private final DashboardWriter<PowerUserCandidate> powerUserWriter;
+
+	public PowerUserStepConfig(
+		JobRepository jobRepository,
+		PlatformTransactionManager transactionManager,
+		@Qualifier("powerUserReader")
+		DashboardReader<PowerUserCandidate> powerUserReader,
+		@Qualifier("powerUserCalculator")
+		DashboardCalculator<
+			PowerUserCandidate,
+			PowerUserCandidate> powerUserCalculator,
+		@Qualifier("powerUserWriter")
+		DashboardWriter<PowerUserCandidate> powerUserWriter) {
+
+		this.jobRepository = jobRepository;
+		this.transactionManager = transactionManager;
+		this.powerUserReader = powerUserReader;
+		this.powerUserCalculator = powerUserCalculator;
+		this.powerUserWriter = powerUserWriter;
+	}
 
 	@Bean
 	public Step powerUserStep() {
+
 		return new StepBuilder("powerUserStep", jobRepository)
 			.tasklet((contribution, chunkContext) -> {
-				// 1. JobExecutionContext에서 공유 파라미터 획득
-				Map<String, Object> jobContext = chunkContext.getStepContext().getJobExecutionContext();
+
+				// JobExecutionContext에서 공통 파라미터 조회
+				Map<String, Object> jobContext =
+					chunkContext.getStepContext().getJobExecutionContext();
+
 				Long datasetId = (Long) jobContext.get("datasetId");
-				DashboardPeriod period = DashboardPeriod.valueOf((String) jobContext.get("period"));
-				LocalDate batchDate = LocalDate.parse((String) jobContext.get("batchDate"));
+				DashboardPeriod period =
+					(DashboardPeriod) jobContext.get("period");
+				LocalDate batchDate =
+					(LocalDate) jobContext.get("batchDate");
 
-				log.info("[PowerUserStep] 파워유저 집계 시작 - DatasetID: {}, Period: {}", datasetId, period);
+				log.info(
+					"[PowerUserStep] 파워유저 집계 시작 - datasetId={}, period={}",
+					datasetId,
+					period
+				);
 
-				// 2. Read: 대상 기간 내의 유저별 활동 원장(Ledger) 집계 데이터 조회
-				List<UserActionLedger> ledgers = powerUserReader.read(batchDate, period);
-				if (ledgers.isEmpty()) {
-					log.warn("[PowerUserStep] 집계 대상 유저 활동 데이터가 존재하지 않습니다.");
+				// 1. Read
+				List<PowerUserCandidate> candidates =
+					powerUserReader.read(batchDate, period);
+
+				if (candidates.isEmpty()) {
+					log.warn("[PowerUserStep] 집계 대상 데이터가 존재하지 않습니다.");
 					return RepeatStatus.FINISHED;
 				}
 
-				// 3. Calculate: 액션 포인트 합산 알고리즘 적용 및 상위 10위 정렬/커팅
-				List<PowerUserCandidate> rankedUsers = powerUserCalculator.calculate(ledgers);
+				// 2. Calculate
+				List<PowerUserCandidate> rankedCandidates =
+					powerUserCalculator.calculate(candidates);
 
-				// 4. Write: 결과 데이터셋 최종 저장
-				powerUserWriter.write(rankedUsers, datasetId);
+				// 3. Write
+				powerUserWriter.write(rankedCandidates, datasetId);
 
-				log.info("[PowerUserStep] 파워유저 집계 완료 - 산출된 파워유저 수: {}건", rankedUsers.size());
+				log.info(
+					"[PowerUserStep] 파워유저 집계 완료 - {}건 저장",
+					rankedCandidates.size()
+				);
+
 				return RepeatStatus.FINISHED;
+
 			}, transactionManager)
 			.build();
 	}

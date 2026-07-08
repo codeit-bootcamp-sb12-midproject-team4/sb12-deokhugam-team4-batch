@@ -108,7 +108,6 @@ public class PopularBookCalculator
 
 	/**
 	 * 로그 기반 정규화
-	 *
 	 * 결과 범위 : 0.0 ~ 1.0
 	 */
 	private double normalizeLog(long value, long maxValue) {

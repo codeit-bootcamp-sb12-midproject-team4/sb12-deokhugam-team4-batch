@@ -4,7 +4,6 @@ import com.codeit.deokhugambatch.dashboard.common.model.BatchMetadataType;
 import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
 import java.sql.Date;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,12 +58,8 @@ public class MetadataUpdateTasklet implements Tasklet {
 
 		Long datasetId = context.getLong("datasetId");
 		DashboardPeriod period = (DashboardPeriod) context.get("period");
-		String batchDateStr = context.getString("batchDate");
 
-		LocalDate batchDate = LocalDate.parse(
-			batchDateStr,
-			DateTimeFormatter.ISO_LOCAL_DATE
-		);
+		LocalDate batchDate = (LocalDate) context.get("batchDate");
 
 		log.info(
 			"Dashboard 배치 최종 메타데이터 갱신 시작 - 대상 Period: {}, New Dataset ID: {}",

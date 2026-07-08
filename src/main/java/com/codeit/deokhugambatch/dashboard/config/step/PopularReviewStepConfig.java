@@ -5,7 +5,6 @@ import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
 import com.codeit.deokhugambatch.dashboard.common.reader.DashboardReader;
 import com.codeit.deokhugambatch.dashboard.common.writer.DashboardWriter;
 import com.codeit.deokhugambatch.dashboard.popularreview.model.PopularReviewCandidate;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.repository.JobRepository;
@@ -21,51 +20,88 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 인기리뷰(Popular Review) 집계 및 랭킹 산출 스텝을 정의하는 설정 클래스입니다.
- * '좋아요 최소 1개 이상' 제약조건 필터링 및 선형 결합 스코어링을 지원합니다.
+ * 인기리뷰(Popular Review) 집계 및 랭킹 산출 Step
+ *
+ * <p>인기리뷰 점수는 전체 후보군을 대상으로 계산해야 하므로
+ * Chunk 기반이 아닌 Tasklet 기반으로 구현한다.</p>
  */
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class PopularReviewStepConfig {
 
 	private final JobRepository jobRepository;
 	private final PlatformTransactionManager transactionManager;
 
-	@Qualifier("popularReviewReader")
 	private final DashboardReader<PopularReviewCandidate> popularReviewReader;
-	@Qualifier("popularReviewCalculator")
-	private final DashboardCalculator<PopularReviewCandidate, PopularReviewCandidate> popularReviewCalculator;
-	@Qualifier("popularReviewWriter")
+	private final DashboardCalculator<
+		PopularReviewCandidate,
+		PopularReviewCandidate> popularReviewCalculator;
 	private final DashboardWriter<PopularReviewCandidate> popularReviewWriter;
+
+	public PopularReviewStepConfig(
+		JobRepository jobRepository,
+		PlatformTransactionManager transactionManager,
+		@Qualifier("popularReviewReader")
+		DashboardReader<PopularReviewCandidate> popularReviewReader,
+		@Qualifier("popularReviewCalculator")
+		DashboardCalculator<
+			PopularReviewCandidate,
+			PopularReviewCandidate> popularReviewCalculator,
+		@Qualifier("popularReviewWriter")
+		DashboardWriter<PopularReviewCandidate> popularReviewWriter) {
+
+		this.jobRepository = jobRepository;
+		this.transactionManager = transactionManager;
+		this.popularReviewReader = popularReviewReader;
+		this.popularReviewCalculator = popularReviewCalculator;
+		this.popularReviewWriter = popularReviewWriter;
+	}
 
 	@Bean
 	public Step popularReviewStep() {
+
 		return new StepBuilder("popularReviewStep", jobRepository)
 			.tasklet((contribution, chunkContext) -> {
-				// 1. JobExecutionContext에서 공유 파라미터 획득
-				Map<String, Object> jobContext = chunkContext.getStepContext().getJobExecutionContext();
+
+				// JobExecutionContext에서 공통 파라미터 조회
+				Map<String, Object> jobContext =
+					chunkContext.getStepContext().getJobExecutionContext();
+
 				Long datasetId = (Long) jobContext.get("datasetId");
-				DashboardPeriod period = DashboardPeriod.valueOf((String) jobContext.get("period"));
-				LocalDate batchDate = LocalDate.parse((String) jobContext.get("batchDate"));
+				DashboardPeriod period =
+					(DashboardPeriod) jobContext.get("period");
+				LocalDate batchDate =
+					(LocalDate) jobContext.get("batchDate");
 
-				log.info("[PopularReviewStep] 인기리뷰 집계 시작 - DatasetID: {}, Period: {}", datasetId, period);
+				log.info(
+					"[PopularReviewStep] 인기리뷰 집계 시작 - datasetId={}, period={}",
+					datasetId,
+					period
+				);
 
-				// 2. Read: 대상 기간 내의 리뷰 데이터 원천 조회
-				List<PopularReviewCandidate> candidates = popularReviewReader.read(batchDate, period);
+				// 1. Read
+				List<PopularReviewCandidate> candidates =
+					popularReviewReader.read(batchDate, period);
+
 				if (candidates.isEmpty()) {
-					log.warn("[PopularReviewStep] 집계 대상 리뷰 데이터가 존재하지 않습니다.");
+					log.warn("[PopularReviewStep] 집계 대상 데이터가 존재하지 않습니다.");
 					return RepeatStatus.FINISHED;
 				}
 
-				// 3. Calculate: 좋아요 0개 원천 배제 필터링 및 선형 가중치 스코어링 (Top 50)
-				List<PopularReviewCandidate> rankedReviews = popularReviewCalculator.calculate(candidates);
+				// 2. Calculate
+				List<PopularReviewCandidate> rankedCandidates =
+					popularReviewCalculator.calculate(candidates);
 
-				// 4. Write: 결과 데이터셋 최종 저장
-				popularReviewWriter.write(rankedReviews, datasetId);
+				// 3. Write
+				popularReviewWriter.write(rankedCandidates, datasetId);
 
-				log.info("[PopularReviewStep] 인기리뷰 집계 완료 - 산출된 리뷰 수: {}건", rankedReviews.size());
+				log.info(
+					"[PopularReviewStep] 인기리뷰 집계 완료 - {}건 저장",
+					rankedCandidates.size()
+				);
+
 				return RepeatStatus.FINISHED;
+
 			}, transactionManager)
 			.build();
 	}
