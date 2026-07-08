@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import org.springframework.stereotype.Component;
+
 @Component
 public class PopularReviewCalculator implements DashboardCalculator<PopularReviewCandidate, PopularReviewCandidate> {
 
