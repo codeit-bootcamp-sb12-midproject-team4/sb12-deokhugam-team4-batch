@@ -14,6 +14,7 @@ import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.NonNull;
 
 /**
  * 앞선 모든 통계 집계 스텝이 성공했을 때,
@@ -37,8 +38,8 @@ public class MetadataUpdateTasklet implements Tasklet {
 
 	@Override
 	public RepeatStatus execute(
-		StepContribution contribution,
-		ChunkContext chunkContext
+		@NonNull StepContribution contribution,
+		@NonNull ChunkContext chunkContext
 	) {
 		ExecutionContext context = contribution.getStepExecution()
 			.getJobExecution()
