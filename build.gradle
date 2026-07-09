@@ -48,7 +48,7 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 
     // 공통 패키지 의존성 추가
-    implementation 'com.codeit:deokhugam-common:1.0.3'
+    implementation 'com.codeit:deokhugam-common:1.0.4'
 
     // Spring Data Elasticsearch
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
