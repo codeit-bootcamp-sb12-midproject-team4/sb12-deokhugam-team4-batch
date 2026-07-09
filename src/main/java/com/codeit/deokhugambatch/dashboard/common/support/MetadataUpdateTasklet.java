@@ -13,34 +13,34 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.lang.NonNull;
 
 /**
  * 앞선 모든 통계 집계 스텝이 성공했을 때,
- * batch_metadata 테이블의 포인터를 최신 데이터셋으로 전환하는 Tasklet입니다.
+ * batch_metadata 테이블의 최신 dataset_id 포인터를 갱신하는 Tasklet입니다.
+ *
+ * <p>
+ * 갱신 대상 MetadataType은 생성자를 통해 주입받으며,
+ * Daily Dashboard / Trending Keyword Job 모두 동일한 Tasklet을 재사용합니다.
+ * </p>
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class MetadataUpdateTasklet implements Tasklet {
 
 	private final JdbcTemplate jdbcTemplate;
 
 	/**
-	 * 갱신 대상 메타데이터 타입
+	 * 이번 Step에서 갱신할 Metadata Type 목록
 	 */
-	private static final List<BatchMetadataType> METADATA_TYPES = List.of(
-		BatchMetadataType.POPULAR_BOOK,
-		BatchMetadataType.POPULAR_REVIEW,
-		BatchMetadataType.POWER_USER
-	);
+	private final List<BatchMetadataType> metadataTypes;
 
 	@Override
 	public RepeatStatus execute(
 		@NonNull StepContribution contribution,
 		@NonNull ChunkContext chunkContext
 	) {
+
 		ExecutionContext context = contribution.getStepExecution()
 			.getJobExecution()
 			.getExecutionContext();
@@ -58,27 +58,32 @@ public class MetadataUpdateTasklet implements Tasklet {
 		}
 
 		Long datasetId = context.getLong("datasetId");
-		DashboardPeriod period = (DashboardPeriod) context.get("period");
 
-		LocalDate batchDate = (LocalDate) context.get("batchDate");
+		DashboardPeriod period =
+			(DashboardPeriod) context.get("period");
+
+		LocalDate batchDate =
+			(LocalDate) context.get("batchDate");
 
 		log.info(
-			"Dashboard 배치 최종 메타데이터 갱신 시작 - 대상 Period: {}, New Dataset ID: {}",
+			"Dashboard 메타데이터 갱신 시작 - metadataTypes={}, period={}, datasetId={}",
+			metadataTypes,
 			period,
 			datasetId
 		);
 
 		String sql = """
-                INSERT INTO batch_metadata
-                    (metadata_type, period, dataset_id, batch_date, updated_at)
-                VALUES (?, ?, ?, ?, NOW(6))
-                ON DUPLICATE KEY UPDATE
-                    dataset_id = VALUES(dataset_id),
-                    batch_date = VALUES(batch_date),
-                    updated_at = NOW(6)
-                """;
+			INSERT INTO batch_metadata
+			    (metadata_type, period, dataset_id, batch_date, updated_at)
+			VALUES (?, ?, ?, ?, NOW(6))
+			ON DUPLICATE KEY UPDATE
+			    dataset_id = VALUES(dataset_id),
+			    batch_date = VALUES(batch_date),
+			    updated_at = NOW(6)
+			""";
 
-		for (BatchMetadataType metadataType : METADATA_TYPES) {
+		for (BatchMetadataType metadataType : metadataTypes) {
+
 			jdbcTemplate.update(
 				sql,
 				metadataType.name(),
@@ -86,9 +91,14 @@ public class MetadataUpdateTasklet implements Tasklet {
 				datasetId,
 				Date.valueOf(batchDate)
 			);
+
+			log.debug(
+				"batch_metadata 갱신 완료 - metadataType={}",
+				metadataType
+			);
 		}
 
-		log.info("Dashboard 배치 최종 메타데이터 갱신 완료 - API 레이어 캐시 로테이션 준비 완료");
+		log.info("Dashboard 메타데이터 갱신 완료");
 
 		return RepeatStatus.FINISHED;
 	}
