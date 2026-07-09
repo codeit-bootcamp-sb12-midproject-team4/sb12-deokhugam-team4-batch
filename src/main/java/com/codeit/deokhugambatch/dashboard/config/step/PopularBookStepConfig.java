@@ -5,7 +5,6 @@ import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
 import com.codeit.deokhugambatch.dashboard.common.reader.DashboardReader;
 import com.codeit.deokhugambatch.dashboard.common.writer.DashboardWriter;
 import com.codeit.deokhugambatch.dashboard.popularbook.model.PopularBookCandidate;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.repository.JobRepository;
@@ -28,20 +27,33 @@ import java.util.Map;
  */
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class PopularBookStepConfig {
 
 	private final JobRepository jobRepository;
 	private final PlatformTransactionManager transactionManager;
 
-	@Qualifier("popularBookReader")
 	private final DashboardReader<PopularBookCandidate> popularBookReader;
-
-	@Qualifier("popularBookCalculator")
-	private final DashboardCalculator<PopularBookCandidate, PopularBookCandidate> popularBookCalculator;
-
-	@Qualifier("popularBookWriter")
+	private final DashboardCalculator<
+		PopularBookCandidate,
+		PopularBookCandidate> popularBookCalculator;
 	private final DashboardWriter<PopularBookCandidate> popularBookWriter;
+
+	public PopularBookStepConfig(
+		JobRepository jobRepository,
+		PlatformTransactionManager transactionManager,
+		@Qualifier("popularBookReader")
+		DashboardReader<PopularBookCandidate> popularBookReader,
+		@Qualifier("popularBookCalculator")
+		DashboardCalculator<PopularBookCandidate, PopularBookCandidate> popularBookCalculator,
+		@Qualifier("popularBookWriter")
+		DashboardWriter<PopularBookCandidate> popularBookWriter) {
+
+		this.jobRepository = jobRepository;
+		this.transactionManager = transactionManager;
+		this.popularBookReader = popularBookReader;
+		this.popularBookCalculator = popularBookCalculator;
+		this.popularBookWriter = popularBookWriter;
+	}
 
 	@Bean
 	public Step popularBookStep() {
@@ -55,9 +67,9 @@ public class PopularBookStepConfig {
 
 				Long datasetId = (Long) jobContext.get("datasetId");
 				DashboardPeriod period =
-					DashboardPeriod.valueOf((String) jobContext.get("period"));
+					(DashboardPeriod) jobContext.get("period");
 				LocalDate batchDate =
-					LocalDate.parse((String) jobContext.get("batchDate"));
+					(LocalDate) jobContext.get("batchDate");
 
 				log.info(
 					"[PopularBookStep] 인기도서 집계 시작 - datasetId={}, period={}",

@@ -2,52 +2,107 @@ package com.codeit.deokhugambatch.dashboard.popularreview.calculator;
 
 import com.codeit.deokhugambatch.dashboard.common.calculator.DashboardCalculator;
 import com.codeit.deokhugambatch.dashboard.popularreview.model.PopularReviewCandidate;
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.IntStream;
 
-import org.springframework.stereotype.Component;
+@Component("popularReviewCalculator")
+public class PopularReviewCalculator
+	implements DashboardCalculator<PopularReviewCandidate, PopularReviewCandidate> {
 
-@Component
-public class PopularReviewCalculator implements DashboardCalculator<PopularReviewCandidate, PopularReviewCandidate> {
+	/**
+	 * 평점 가중치
+	 */
+	private static final double RATING_WEIGHT = 0.30;
 
-	private static final int MAX_RANKING_LIMIT = 50;
+	/**
+	 * 좋아요 가중치
+	 */
+	private static final double LIKE_WEIGHT = 0.50;
+
+	/**
+	 * 댓글 가중치
+	 */
+	private static final double COMMENT_WEIGHT = 0.20;
+
+	/**
+	 * 최대 랭킹
+	 */
+	private static final int MAX_RANKING = 50;
 
 	@Override
-	public List<PopularReviewCandidate> calculate(List<PopularReviewCandidate> input) {
-		if (input == null || input.isEmpty()) {
+	public List<PopularReviewCandidate> calculate(List<PopularReviewCandidate> candidates) {
+
+		if (candidates == null || candidates.isEmpty()) {
 			return List.of();
 		}
 
-		// 1. 제약조건 필터링 (좋아요 1개 이상만 Pool 유지) 및 선형 결합 스코어링
-		List<PopularReviewCandidate> scoredReviews = input.stream()
-			.filter(review -> review.getLikeCount() >= 1) // [핵심 제약조건] 좋아요 0개 원천 배제
-			.map(review -> {
-				long likeCount = review.getLikeCount();
-				long commentCount = review.getCommentCount();
+		long maxLikeCount = candidates.stream()
+			.mapToLong(PopularReviewCandidate::getLikeCount)
+			.max()
+			.orElse(1L);
 
-				// Score = (L * 2.0) + (C * 1.0)
-				double score = (likeCount * 2.0) + commentCount;
+		long maxCommentCount = candidates.stream()
+			.mapToLong(PopularReviewCandidate::getCommentCount)
+			.max()
+			.orElse(1L);
 
-				review.setScore(
-					BigDecimal.valueOf(score)
-						.setScale(2, RoundingMode.HALF_UP)
-				);
+		for (PopularReviewCandidate candidate : candidates) {
 
-				return review;
-			})
-			.sorted(Comparator.comparing(PopularReviewCandidate::getScore).reversed())
+			double ratingScore =
+				candidate.getReviewRating() / 5.0;
+
+			double likeScore =
+				normalizeLog(candidate.getLikeCount(), maxLikeCount);
+
+			double commentScore =
+				normalizeLog(candidate.getCommentCount(), maxCommentCount);
+
+			double finalScore =
+				(ratingScore * RATING_WEIGHT)
+					+ (likeScore * LIKE_WEIGHT)
+					+ (commentScore * COMMENT_WEIGHT);
+
+			candidate.setScore(
+				BigDecimal.valueOf(finalScore)
+					.setScale(2, RoundingMode.HALF_UP)
+			);
+		}
+
+		List<PopularReviewCandidate> rankedCandidates = candidates.stream()
+			.sorted(
+				Comparator
+					.comparing(PopularReviewCandidate::getScore, Comparator.reverseOrder())
+					.thenComparing(PopularReviewCandidate::getLikeCount, Comparator.reverseOrder())
+					.thenComparing(PopularReviewCandidate::getCommentCount, Comparator.reverseOrder())
+					.thenComparing(PopularReviewCandidate::getReviewRating, Comparator.reverseOrder())
+					.thenComparing(PopularReviewCandidate::getReviewId)
+			)
+			.limit(MAX_RANKING)
 			.toList();
 
-		// 2. 순위 부여 및 Top 50 제한
-		return IntStream.range(0, Math.min(scoredReviews.size(), MAX_RANKING_LIMIT))
-			.mapToObj(i -> {
-				PopularReviewCandidate review = scoredReviews.get(i);
-				review.setRanking(i + 1);
-				return review;
-			})
-			.toList();
+		for (int i = 0; i < rankedCandidates.size(); i++) {
+			rankedCandidates.get(i).setRanking(i + 1);
+		}
+
+		return rankedCandidates;
+	}
+
+	/**
+	 * 로그 기반 정규화
+	 *
+	 * 결과 범위 : 0.0 ~ 1.0
+	 */
+	private double normalizeLog(long value, long maxValue) {
+
+		if (maxValue <= 0) {
+			return 0.0;
+		}
+
+		return Math.log(value + 1.0)
+			/ Math.log(maxValue + 1.0);
 	}
 }
