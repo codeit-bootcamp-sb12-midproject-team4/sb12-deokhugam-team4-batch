@@ -19,12 +19,9 @@ import org.springframework.stereotype.Component;
 public class DashboardScheduler {
 
 	private final JobLauncher jobLauncher;
-
 	private final Job dailyDashboardJob;
 
-	/**
-	 * 매일 오전 3시 Dashboard 통계 배치를 실행한다.
-	 */
+	//매일 오전 3시 Dashboard 통계 배치 실행
 	@Scheduled(cron = "0 0 3 * * *")
 	public void runDailyDashboardJob() {
 

@@ -117,7 +117,7 @@ public class PopularBookReader implements DashboardReader<PopularBookCandidate> 
 			candidate.setThumbnailUrl(rs.getString("thumbnail_url"));
 
 			candidate.setReviewCount(rs.getLong("review_count"));
-			candidate.setAverageRating(rs.getDouble("average_rating"));
+			candidate.setAverageRating(rs.getBigDecimal("average_rating"));
 			candidate.setLikeCount(rs.getLong("like_count"));
 			candidate.setCommentCount(rs.getLong("comment_count"));
 

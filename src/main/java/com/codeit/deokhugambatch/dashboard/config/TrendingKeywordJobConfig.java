@@ -2,18 +2,18 @@ package com.codeit.deokhugambatch.dashboard.config;
 
 import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
 import com.codeit.deokhugambatch.dashboard.common.support.DatasetIdGenerator;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.time.LocalDate;
 
 @Slf4j
 @Configuration
@@ -23,9 +23,6 @@ public class TrendingKeywordJobConfig {
 	private final JobRepository jobRepository;
 	private final DatasetIdGenerator datasetIdGenerator;
 
-	/**
-	 * 트렌딩 키워드 전용 Job
-	 */
 	@Bean
 	public Job trendingKeywordJob(
 		Step trendingKeywordStep,
@@ -39,9 +36,6 @@ public class TrendingKeywordJobConfig {
 			.build();
 	}
 
-	/**
-	 * Job 실행 전 공통 파라미터 초기화
-	 */
 	@Bean
 	public JobExecutionListener trendingKeywordJobListener() {
 
@@ -50,16 +44,22 @@ public class TrendingKeywordJobConfig {
 			@Override
 			public void beforeJob(JobExecution jobExecution) {
 
-				DashboardPeriod period = DashboardPeriod.REALTIME;
+				JobParameters jobParameters = jobExecution.getJobParameters();
 
-				LocalDate batchDate = LocalDate.now();
+				DashboardPeriod period = DashboardPeriod.valueOf(
+					jobParameters.getString("period")
+				);
+
+				LocalDate batchDate = LocalDate.parse(
+					jobParameters.getString("batchDate")
+				);
 
 				Long datasetId = datasetIdGenerator.generate();
 
 				log.info("=== Trending Keyword Batch 초기화 ===");
-				log.info("Period      : {}", period);
-				log.info("Batch Date  : {}", batchDate);
-				log.info("Dataset ID  : {}", datasetId);
+				log.info("Dataset ID : {}", datasetId);
+				log.info("Period     : {}", period);
+				log.info("Batch Date : {}", batchDate);
 				log.info("=====================================");
 
 				jobExecution.getExecutionContext().put("datasetId", datasetId);

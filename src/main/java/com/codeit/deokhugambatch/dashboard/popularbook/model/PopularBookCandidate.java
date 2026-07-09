@@ -55,7 +55,7 @@ public class PopularBookCandidate {
 	/**
 	 * 평균 평점
 	 */
-	private double averageRating;
+	private BigDecimal averageRating;
 
 	/**
 	 * 좋아요 수

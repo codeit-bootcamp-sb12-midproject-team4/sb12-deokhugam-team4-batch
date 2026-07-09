@@ -18,6 +18,17 @@ spring:
         show_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
+  ai:
+    openai:
+      api-key: ${GEMINI_API_KEY}
+      base-url: "https://generativelanguage.googleapis.com"
+      chat:
+        options:
+          model: "gemini-2.5-flash"
+
+  elasticsearch:
+    uris: http://localhost:9200
+
   batch:
     jdbc:
       # 배치 Job 실행 이력(메타데이터)을 DB에 저장

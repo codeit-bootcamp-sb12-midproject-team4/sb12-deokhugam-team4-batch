@@ -61,7 +61,11 @@ public class PopularReviewReader implements DashboardReader<PopularReviewCandida
 			    b.author AS book_author,
 			    b.thumbnail_key AS thumbnail_url,
 			    u.nickname AS user_nickname,
-			    LEFT(r.content, 300) AS review_summary,
+			    CASE
+			        WHEN CHAR_LENGTH(r.content) > 300
+			            THEN CONCAT(LEFT(r.content, 300), '...')
+			        ELSE r.content
+			    END AS review_summary,
 			    r.rating AS review_rating,
 			    COALESCE(ls.like_count, 0) AS like_count,
 			    COALESCE(cs.comment_count, 0) AS comment_count

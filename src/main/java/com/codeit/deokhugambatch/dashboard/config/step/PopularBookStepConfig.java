@@ -82,8 +82,10 @@ public class PopularBookStepConfig {
 					popularBookReader.read(batchDate, period);
 
 				if (candidates.isEmpty()) {
-					log.warn("[PopularBookStep] 집계 대상 데이터가 존재하지 않습니다.");
-					return RepeatStatus.FINISHED;
+					log.error("[PopularBookStep] 집계 대상 데이터가 존재하지 않습니다.");
+					throw new IllegalStateException(
+						"PopularBook 집계 대상이 존재하지 않습니다."
+					);
 				}
 
 				// 2. Calculate

@@ -16,14 +16,6 @@ spring:
         physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
         jdbc.time_zone: UTC
 
-  ai:
-    openai:
-      api-key: ${GEMINI_API_KEY}
-      base-url: "https://generativelanguage.googleapis.com"
-      chat:
-        options:
-          model: "gemini-2.5-flash"
-
 # log
 logging:
   level:

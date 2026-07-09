@@ -50,8 +50,8 @@ public class SpringAiLlmClient implements LlmClient {
 			);
 
 			return results;
-		}
-		catch (Exception e) {
+
+		} catch (Exception e) {
 
 			log.error("Gemini LLM 호출 실패", e);
 
@@ -62,7 +62,6 @@ public class SpringAiLlmClient implements LlmClient {
 		}
 	}
 
-	// Gemini가 ```json ... ``` 형태로 응답하는 경우 JSON만 추출
 	private String extractJson(String response) {
 
 		String json = response.trim();
@@ -71,7 +70,8 @@ public class SpringAiLlmClient implements LlmClient {
 			return json;
 		}
 
-		json = json.replaceFirst("^```json\\s*", "");
+		// ```json, ```JSON, ```Json 등 모두 처리
+		json = json.replaceFirst("(?i)^```json\\s*", "");
 		json = json.replaceFirst("^```\\s*", "");
 
 		if (json.endsWith("```")) {
