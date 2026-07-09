@@ -166,10 +166,7 @@ CREATE TABLE batch_metadata
         DEFAULT CURRENT_TIMESTAMP(6)
         ON UPDATE CURRENT_TIMESTAMP(6),
 
-    CONSTRAINT pk_batch_metadata
-        PRIMARY KEY (metadata_type, period),
-    CONSTRAINT uq_batch_metadata_dataset_id
-        UNIQUE (dataset_id)
+    PRIMARY KEY (metadata_type, period)
 );
 
 CREATE TABLE popular_book
