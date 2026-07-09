@@ -283,3 +283,14 @@ ALTER TABLE `oauth_kakao` ADD CONSTRAINT pk_oauth_kakao_id PRIMARY KEY (id);
 ALTER TABLE `oauth_kakao` ADD CONSTRAINT uk_oauth_kakao_email UNIQUE (email);
 ALTER TABLE `oauth_kakao` ADD CONSTRAINT fk_oauth_kakao_user FOREIGN KEY (user_id) REFERENCES `users`(id);
 
+CREATE TABLE comment_report (
+                                id              BINARY(16)      NOT NULL,
+                                comment_id      BINARY(16)      NOT NULL,
+                                user_id         BINARY(16)      NOT NULL,
+                                reason          VARCHAR(500)    NULL,
+                                created_at      DATETIME(6)     NOT NULL,
+                                updated_at      DATETIME(6)     NOT NULL
+);
+ALTER TABLE comment_report ADD CONSTRAINT pk_comment_report_id PRIMARY KEY (id);
+ALTER TABLE comment_report ADD CONSTRAINT fk_comment_report_comment FOREIGN KEY (comment_id) REFERENCES comment(id);
+ALTER TABLE comment_report ADD CONSTRAINT fk_comment_report_user FOREIGN KEY (user_id) REFERENCES `users`(id);
