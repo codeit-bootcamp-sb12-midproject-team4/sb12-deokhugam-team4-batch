@@ -21,8 +21,11 @@ public class DashboardScheduler {
 	private final JobLauncher jobLauncher;
 	private final Job dailyDashboardJob;
 
-	//매일 오전 3시 Dashboard 통계 배치 실행
-	@Scheduled(cron = "0 0 3 * * *")
+	/**
+	 * 매일 오전 3시 Dashboard 통계 배치를 실행한다.
+	 */
+	//@Scheduled(cron = "0 0 3 * * *")
+	@Scheduled(cron = "0 */7 * * * *")
 	public void runDailyDashboardJob() {
 
 		try {
