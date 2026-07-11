@@ -17,6 +17,9 @@ java {
 
 repositories {
     mavenCentral()
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' } // Spring AI M(마일스톤) 버전용
+    maven { url 'https://repo.spring.io/snapshot' }  // 혹시 모를 최신 스냅샷용
 
 //    actions를 위해 getenv, 로컬을 위해 env.__.value
     maven {
@@ -42,7 +45,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.batch:spring-batch-test'
-    testRuntimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2'
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
@@ -54,7 +57,19 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+    // Spring AI 의존성 추가
+    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+}
 
+ext {
+    set('springAiVersion', "1.1.2")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
 }
 
 tasks.named('test') {

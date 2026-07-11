@@ -77,7 +77,7 @@ public class PopularBookWriter
 				ps.setLong(12, candidate.getLikeCount());
 				ps.setLong(13, candidate.getCommentCount());
 
-				ps.setDouble(14, candidate.getAverageRating());
+				ps.setBigDecimal(14, candidate.getAverageRating());
 			}
 
 			@Override

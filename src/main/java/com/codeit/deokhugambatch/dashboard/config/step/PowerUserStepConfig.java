@@ -84,8 +84,10 @@ public class PowerUserStepConfig {
 					powerUserReader.read(batchDate, period);
 
 				if (candidates.isEmpty()) {
-					log.warn("[PowerUserStep] 집계 대상 데이터가 존재하지 않습니다.");
-					return RepeatStatus.FINISHED;
+					log.error("[PowerUserStep] 집계 대상 데이터가 존재하지 않습니다.");
+					throw new IllegalStateException(
+						"PowerUser 집계 대상이 존재하지 않습니다."
+					);
 				}
 
 				// 2. Calculate

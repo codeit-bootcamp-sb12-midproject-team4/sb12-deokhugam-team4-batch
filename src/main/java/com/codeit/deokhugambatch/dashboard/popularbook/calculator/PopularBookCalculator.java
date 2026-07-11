@@ -63,7 +63,7 @@ public class PopularBookCalculator
 		for (PopularBookCandidate candidate : candidates) {
 
 			double ratingScore =
-				candidate.getAverageRating() / 5.0;
+				candidate.getAverageRating().doubleValue() / 5.0;
 
 			double reviewScore =
 				normalizeLog(candidate.getReviewCount(), maxReviewCount);

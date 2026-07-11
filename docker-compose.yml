@@ -3,18 +3,18 @@ services:
     image: mysql:8.0
     container_name: local-deokhugam-db
     restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_DATABASE: deokhugam-db
+      MYSQL_DATABASE: deokhugam
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_USER: user
       MYSQL_PASSWORD: 1234
     ports:
       - "3306:3306"
     volumes:
-      # 로컬 데이터를 저장할 폴더 (삭제/생성 시 데이터 유지)
       - ./mysql-data:/var/lib/mysql
-      # 컨테이너 시작 시 실행될 DDL 스크립트
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - ./src/main/resources/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./src/main/resources/04_data.sql:/docker-entrypoint-initdb.d/04_data.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
