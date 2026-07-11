@@ -4,7 +4,7 @@ services:
     container_name: local-deokhugam-db
     restart: always
     environment:
-      MYSQL_DATABASE: deokhugam-db
+      MYSQL_DATABASE: deokhugam
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_USER: user
       MYSQL_PASSWORD: 1234
