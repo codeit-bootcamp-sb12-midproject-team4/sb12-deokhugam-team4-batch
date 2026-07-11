@@ -20,7 +20,7 @@ public class TrendingKeywordScheduler {
 	private final Job trendingKeywordJob;
 
 	// 10분마다 Trending Keyword Job 실행
-	@Scheduled(cron = "0 */10 * * * *")
+	@Scheduled(cron = "0 */5 * * * *")
 	public void runTrendingKeywordJob() {
 
 		try {

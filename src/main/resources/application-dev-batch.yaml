@@ -19,12 +19,12 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
   ai:
-    openai:
-      api-key: ${GEMINI_API_KEY}
-      base-url: "https://generativelanguage.googleapis.com"
-      chat:
-        options:
-          model: "gemini-2.5-flash"
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: "gemini-flash-latest"
 
   elasticsearch:
     uris: http://localhost:9200

@@ -53,6 +53,14 @@ public class SpringAiLlmClient implements LlmClient {
 
 		} catch (Exception e) {
 
+			Throwable rootCause = e;
+			while (rootCause.getCause() != null && rootCause != rootCause.getCause()) {
+				rootCause = rootCause.getCause();
+			}
+
+			log.error("🔥🔥🔥 구글 API가 뱉은 진짜 에러 원인: {}", rootCause.getMessage());
+			// ---------------------------------------------------------
+
 			log.error("Gemini LLM 호출 실패", e);
 
 			throw new IllegalStateException(
