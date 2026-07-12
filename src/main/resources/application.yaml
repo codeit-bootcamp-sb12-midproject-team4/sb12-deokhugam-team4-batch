@@ -30,3 +30,6 @@ logging:
   pattern:
     console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"
 
+deokhugam-batch:
+  api:
+    base-url: ${DEOKHUGAM_API_BASE_URL:http://localhost:8080}
