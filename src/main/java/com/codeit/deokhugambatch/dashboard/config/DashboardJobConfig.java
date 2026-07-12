@@ -1,9 +1,7 @@
 package com.codeit.deokhugambatch.dashboard.config;
 
-import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
-import com.codeit.deokhugambatch.dashboard.common.support.DatasetIdGenerator;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDate;
+
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
@@ -13,7 +11,11 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.LocalDate;
+import com.codeit.deokhugambatch.dashboard.common.model.DashboardPeriod;
+import com.codeit.deokhugambatch.dashboard.common.support.DatasetIdGenerator;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Dashboard 배치의 전체 워크플로우 및 스텝 실행 순서를 관장하는 메인 설정 클래스입니다.
@@ -34,6 +36,7 @@ public class DashboardJobConfig {
 	public Job dailyDashboardJob(
 		Step popularBookStep,
 		Step popularReviewStep,
+		Step popularReviewNotificationPublishStep,
 		Step powerUserStep,
 		Step metadataUpdateStep
 	) {
@@ -41,6 +44,7 @@ public class DashboardJobConfig {
 			.listener(dashboardJobListener())
 			.start(popularBookStep)
 			.next(popularReviewStep)
+			.next(popularReviewNotificationPublishStep)
 			.next(powerUserStep)
 			.next(metadataUpdateStep)
 			.build();
