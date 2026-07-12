@@ -47,7 +47,7 @@ public class ElasticsearchKeywordClientImpl implements ElasticsearchKeywordClien
 				AGGREGATION_NAME,
 				Aggregation.of(a -> a
 					.terms(t -> t
-						.field("keyword")
+						.field("keyword.keyword")
 						.size(100)
 					)
 				)

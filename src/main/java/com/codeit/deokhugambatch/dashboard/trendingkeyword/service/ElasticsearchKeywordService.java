@@ -27,7 +27,7 @@ public class ElasticsearchKeywordService {
 	 */
 	public List<KeywordFrequency> getTopKeywords() {
 
-		Instant to = Instant.now();
+		Instant to = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 		Instant from = to.minus(3, ChronoUnit.HOURS);
 
 		log.info(

@@ -21,18 +21,15 @@ public class DashboardScheduler {
 	private final JobLauncher jobLauncher;
 	private final Job dailyDashboardJob;
 
-	/**
-	 * 매일 오전 3시 Dashboard 통계 배치를 실행한다.
-	 */
-	//@Scheduled(cron = "0 0 3 * * *")
-	@Scheduled(cron = "0 */7 * * * *")
+	@Scheduled(cron = "0 0 4 * * *")
 	public void runDailyDashboardJob() {
 
 		try {
+			LocalDate yesterday = LocalDate.now().minusDays(1);
 
 			JobParameters jobParameters = new JobParametersBuilder()
 				.addString("period", "DAILY")
-				.addString("batchDate", LocalDate.now().toString())
+				.addString("batchDate", yesterday.toString())
 				.addLocalDateTime("requestedAt", LocalDateTime.now())
 				.toJobParameters();
 
